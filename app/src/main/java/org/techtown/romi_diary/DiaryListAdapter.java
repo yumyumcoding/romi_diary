@@ -21,12 +21,14 @@ public class DiaryListAdapter extends RecyclerView.Adapter<DiaryListAdapter.View
 
     ArrayList<DiaryModel> mLstDiary; //다이어리 데이터들을 들고있는 자료형
     Context mContext;
+    DatabaseHelper mDatabaseHelper; //데이터 베이스 헬퍼 클래스
 
     @NonNull
     @Override
     public DiaryListAdapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         mContext = parent.getContext();
-        View holder = LayoutInflater.from(mContext).inflate(R.layout.list_item_diary, parent,false);
+        mDatabaseHelper = new DatabaseHelper(mContext);
+        View holder = LayoutInflater.from(mContext).inflate(R.layout.list_item_diary, parent, false);
         return new ViewHolder(holder);
     }
 
@@ -34,7 +36,7 @@ public class DiaryListAdapter extends RecyclerView.Adapter<DiaryListAdapter.View
     public void onBindViewHolder(@NonNull DiaryListAdapter.ViewHolder holder, int position) {
         int weatherType = mLstDiary.get(position).getWeatherType();
 
-        switch (weatherType){
+        switch (weatherType) {
             case 0:
                 //맑음
                 holder.iv_weather.setImageResource(R.drawable.sun);
@@ -58,7 +60,7 @@ public class DiaryListAdapter extends RecyclerView.Adapter<DiaryListAdapter.View
             case 5:
                 //눈
                 holder.iv_weather.setImageResource(R.drawable.snow);
-               break;
+                break;
         }
 
         String title = mLstDiary.get(position).getTitle();
@@ -75,7 +77,7 @@ public class DiaryListAdapter extends RecyclerView.Adapter<DiaryListAdapter.View
 
     public class ViewHolder extends RecyclerView.ViewHolder {
         ImageView iv_weather;
-        TextView tv_title,tv_user_date;
+        TextView tv_title, tv_user_date;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -90,8 +92,8 @@ public class DiaryListAdapter extends RecyclerView.Adapter<DiaryListAdapter.View
                     DiaryModel diaryModel = mLstDiary.get(currentPosition);
 
                     Intent diaryDetailIntent = new Intent(mContext, DiaryDetailActivity.class);
-                    diaryDetailIntent.putExtra("diaryModel",diaryModel);//다이어리 데이터 넘기기
-                    diaryDetailIntent.putExtra("mode","detail"); //상세보기 모드로 설정
+                    diaryDetailIntent.putExtra("diaryModel", diaryModel);//다이어리 데이터 넘기기
+                    diaryDetailIntent.putExtra("mode", "detail"); //상세보기 모드로 설정
                     mContext.startActivity(diaryDetailIntent);
                 }
             });
@@ -102,7 +104,7 @@ public class DiaryListAdapter extends RecyclerView.Adapter<DiaryListAdapter.View
                     int currentPosition = getAdapterPosition();
                     DiaryModel diaryModel = mLstDiary.get(currentPosition);
 
-                    String[] strChoiceArray = {"수정 하기","삭제 하기"};
+                    String[] strChoiceArray = {"수정 하기", "삭제 하기"};
                     //팝업 화면 표시
                     new AlertDialog.Builder(mContext)
                             .setTitle("원하시는 동작을 선택하세요")
@@ -110,11 +112,18 @@ public class DiaryListAdapter extends RecyclerView.Adapter<DiaryListAdapter.View
                                 @Override
                                 public void onClick(DialogInterface dialogInterface, int position) {
                                     if (position == 0) {
+                                        //수정하기 버튼을 눌렀을 때
+
+                                        //화면 이동 및 다이어리 데이터 다음
                                         Intent diaryDetailIntent = new Intent(mContext, DiaryDetailActivity.class);
                                         diaryDetailIntent.putExtra("diaryModel", diaryModel);//다이어리 데이터 넘기기
                                         diaryDetailIntent.putExtra("mode", "modify"); //수정 모드로 설정
                                         mContext.startActivity(diaryDetailIntent);
                                     } else {
+                                        //삭제하기 버튼을 눌렀을 때
+                                        //delete database data
+                                        mDatabaseHelper.setDeleteDiaryList(diaryModel.getWriteDate());
+                                        //delete UI
                                         mLstDiary.remove(currentPosition);
                                         notifyItemRemoved(currentPosition);
                                     }
@@ -126,7 +135,9 @@ public class DiaryListAdapter extends RecyclerView.Adapter<DiaryListAdapter.View
         }
     }
 
-    public void setSampleList(ArrayList<DiaryModel> lstDiary){
+    public void setListInit(ArrayList<DiaryModel> lstDiary) {
         mLstDiary = lstDiary;
+        notifyDataSetChanged();//리스트뷰 새로고침
     }
 }
+
